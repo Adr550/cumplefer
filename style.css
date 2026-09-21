@@ -1,0 +1,399 @@
+:root {
+  color-scheme: dark;
+  --black: #000;
+  --pink: #eaa0b7;
+  --pink-bright: #ffc2d4;
+  --gray: #77777b;
+  --muted: #49494d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--black);
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  width: min(100%, 560px);
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: 76px 430px auto;
+  padding: 0 22px 30px;
+  background: #000;
+  overflow: hidden;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: 38px 1fr 48px;
+  align-items: center;
+  gap: 4px;
+  color: var(--gray);
+}
+
+.topbar h1 {
+  margin: 0;
+  font-family: ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  font-size: clamp(1.36rem, 5vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.icon-button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: currentColor;
+  cursor: pointer;
+}
+
+.back {
+  width: 30px;
+  height: 32px;
+  display: grid;
+  place-items: center start;
+}
+
+.back span {
+  display: block;
+  width: 20px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--gray);
+}
+
+.camera {
+  justify-self: end;
+  width: 46px;
+  height: 46px;
+}
+
+.camera svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--gray);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.4;
+}
+
+.camera .camera-shadow {
+  opacity: 0.8;
+}
+
+.heart-stage {
+  position: relative;
+  height: 430px;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.view-switch {
+  position: absolute;
+  z-index: 3;
+  top: 6px;
+  right: 2px;
+  display: flex;
+  gap: 4px;
+}
+
+.view-switch button {
+  display: grid;
+  width: 29px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid #242426;
+  border-radius: 999px;
+  color: #56565a;
+  background: rgba(0, 0, 0, 0.72);
+  font-size: 0.65rem;
+  cursor: pointer;
+}
+
+.view-switch button:first-child {
+  font-size: 0.95rem;
+}
+
+.view-switch button:last-child {
+  font-size: 1rem;
+}
+
+.view-switch button.is-active {
+  border-color: #553d46;
+  color: var(--pink-bright);
+  box-shadow: 0 0 12px rgba(234, 160, 183, 0.1);
+}
+
+#heart-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: saturate(0.92);
+}
+
+.heart-hitbox {
+  position: absolute;
+  inset: 10% 8%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.heart-hitbox:active {
+  cursor: grabbing;
+}
+
+.player {
+  width: min(100%, 440px);
+  margin: 0 auto;
+  padding: 8px 14px 0;
+  opacity: 0.86;
+}
+
+.track-copy {
+  text-align: center;
+}
+
+.track-copy p {
+  margin: 0;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.25em;
+}
+
+.track-name {
+  max-width: 100%;
+  padding: 6px 18px 7px;
+  overflow: hidden;
+  color: #b9b9bd;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.playlist button {
+  border: 1px solid #242426;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: #555559;
+  background: transparent;
+  font-size: 0.55rem;
+  cursor: pointer;
+}
+
+.playlist button.is-active {
+  border-color: #553d46;
+  color: var(--pink);
+  background: rgba(234, 160, 183, 0.06);
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  gap: 10px;
+  color: #606064;
+  font-size: 0.58rem;
+}
+
+.upload-song {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+  margin: 0 auto 7px;
+  padding: 3px 7px;
+  color: #68686c;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.upload-song:hover {
+  color: var(--pink-bright);
+}
+
+.upload-song svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.upload-song input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+#timeline {
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+#timeline::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--pink) var(--progress, 0%), #29292c var(--progress, 0%));
+}
+
+#timeline::-webkit-slider-thumb {
+  width: 8px;
+  height: 8px;
+  margin-top: -3px;
+  appearance: none;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pink-bright);
+  box-shadow: 0 0 8px rgba(255, 166, 195, 0.6);
+}
+
+#timeline::-moz-range-track {
+  height: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: #29292c;
+}
+
+#timeline::-moz-range-progress {
+  height: 2px;
+  background: var(--pink);
+}
+
+#timeline::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pink-bright);
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 6px;
+}
+
+.control-button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: #8a8a8e;
+  background: none;
+  cursor: pointer;
+}
+
+.control-button svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.control-button.play {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #4b3840;
+  border-radius: 50%;
+  color: var(--pink-bright);
+  background: rgba(234, 160, 183, 0.08);
+  box-shadow: 0 0 24px rgba(234, 160, 183, 0.08);
+}
+
+.control-button.play svg {
+  width: 23px;
+  height: 23px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.pause-icon,
+.is-playing .play-icon {
+  display: none;
+}
+
+.is-playing .pause-icon {
+  display: block;
+}
+
+
+@media (min-width: 700px) {
+  .app {
+    min-height: min(920px, 100svh);
+    border-inline: 1px solid #0a0a0c;
+  }
+}
+
+@media (max-height: 690px) {
+  .app {
+    grid-template-rows: 65px 370px auto;
+    padding-bottom: 16px;
+  }
+
+  .heart-stage {
+    height: 370px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}
