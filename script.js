@@ -15,6 +15,7 @@ const timeline = document.querySelector("#timeline");
 const currentTimeLabel = document.querySelector("#current-time");
 const durationLabel = document.querySelector("#duration");
 const trackName = document.querySelector("#track-name");
+const playlist = document.querySelector(".playlist");
 const playlistButtons = [...document.querySelectorAll("[data-track]")];
 const viewButtons = [...document.querySelectorAll("[data-view]")];
 
@@ -55,6 +56,11 @@ const builtInTracks = [
     src: "assets/alive.mp3",
     bpm: 120,
   },
+  {
+    title: "Viento — Caifanes",
+    src: "assets/viento.mp3",
+    bpm: 124,
+  },
 ];
 const particles = [];
 const starParticles = [];
@@ -67,7 +73,7 @@ let analyser;
 let frequencyData;
 let demoTimer;
 let demoBeat = 0;
-let objectUrl;
+const customObjectUrls = [];
 let pendingUploadFile;
 let isPlaying = false;
 let isBuffering = false;
@@ -525,18 +531,21 @@ function updateTimeline() {
 
 function loadSong(file, bpm) {
   if (!file) return;
-  if (objectUrl) URL.revokeObjectURL(objectUrl);
-  objectUrl = URL.createObjectURL(file);
-  audio.src = objectUrl;
-  trackName.textContent = file.name.replace(/\.[^.]+$/, "");
-  playlistButtons.forEach((button) => button.classList.remove("is-active"));
-  currentTrackIndex = null;
-  currentBpm = bpm;
-  audio.dataset.bpm = String(bpm);
-  beatOffset = 0;
-  isBuffering = true;
-  audio.load();
-  togglePlayback();
+  const title = file.name.replace(/\.[^.]+$/, "");
+  const src = URL.createObjectURL(file);
+  customObjectUrls.push(src);
+  const index = builtInTracks.push({ title, src, bpm, custom: true }) - 1;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "custom-track";
+  button.dataset.track = String(index);
+  button.textContent = title;
+  button.title = `${title} · ${bpm} BPM`;
+  button.addEventListener("click", () => loadBuiltInTrack(index));
+  playlist.append(button);
+  playlistButtons.push(button);
+  loadBuiltInTrack(index);
+  requestAnimationFrame(() => button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }));
 }
 
 function loadBuiltInTrack(index) {
@@ -687,6 +696,9 @@ audio.addEventListener("error", () => {
 audio.addEventListener("loadedmetadata", updateTimeline);
 audio.addEventListener("timeupdate", updateTimeline);
 window.addEventListener("resize", resizeCanvas);
+window.addEventListener("beforeunload", () => {
+  customObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+});
 
 buildHeart();
 buildSpaceScene();

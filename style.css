@@ -168,6 +168,13 @@ label {
   background: rgba(234, 160, 183, 0.06);
 }
 
+.playlist button.custom-track {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .timeline-row {
   display: grid;
   grid-template-columns: 34px 1fr 34px;
