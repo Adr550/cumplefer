@@ -33,12 +33,24 @@
             <button type="button" data-track="3">Midnight City</button>
             <button type="button" data-track="4">No Existes</button>
             <button type="button" data-track="5">Heroes</button>
+            <button type="button" data-track="6">Alive</button>
           </div>
-          <label class="upload-song" aria-label="Subir una canción">
-            <input id="file-picker" type="file" accept="audio/*" />
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0-12L7.5 7.5M12 3l4.5 4.5M5 15v4h14v-4" /></svg>
-            <span>subir canción</span>
-          </label>
+          <form class="custom-upload" id="custom-upload" novalidate>
+            <label class="upload-song" aria-label="Subir una canción">
+              <input id="file-picker" type="file" accept="audio/*" />
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0-12L7.5 7.5M12 3l4.5 4.5M5 15v4h14v-4" /></svg>
+              <span>subir canción</span>
+            </label>
+            <div class="upload-config" id="upload-config" hidden>
+              <span class="upload-file-name" id="upload-file-name"></span>
+              <label class="bpm-field">
+                <span>BPM</span>
+                <input id="custom-bpm" type="number" min="40" max="240" step="0.1" inputmode="decimal" required aria-label="BPM de la canción" />
+              </label>
+              <button type="submit">añadir</button>
+            </div>
+            <p class="upload-error" id="upload-error" role="alert"></p>
+          </form>
         </div>
 
         <div class="timeline-row">
@@ -61,7 +73,7 @@
         </div>
       </section>
 
-      <audio id="audio" src="assets/1979.mp3" preload="auto"></audio>
+      <audio id="audio" src="assets/1979.mp3" preload="auto" data-bpm="128"></audio>
     </main>
 
     <script src="script.js"></script>

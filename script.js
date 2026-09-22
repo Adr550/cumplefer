@@ -6,6 +6,11 @@ const heartToggle = document.querySelector("#heart-toggle");
 const previousButton = document.querySelector("#previous");
 const nextButton = document.querySelector("#next");
 const filePicker = document.querySelector("#file-picker");
+const customUploadForm = document.querySelector("#custom-upload");
+const uploadConfig = document.querySelector("#upload-config");
+const uploadFileName = document.querySelector("#upload-file-name");
+const customBpmInput = document.querySelector("#custom-bpm");
+const uploadError = document.querySelector("#upload-error");
 const timeline = document.querySelector("#timeline");
 const currentTimeLabel = document.querySelector("#current-time");
 const durationLabel = document.querySelector("#duration");
@@ -45,6 +50,11 @@ const builtInTracks = [
     src: "assets/heroes.mp3",
     bpm: 79,
   },
+  {
+    title: "Alive — Empire of the Sun",
+    src: "assets/alive.mp3",
+    bpm: 120,
+  },
 ];
 const particles = [];
 const starParticles = [];
@@ -58,6 +68,7 @@ let frequencyData;
 let demoTimer;
 let demoBeat = 0;
 let objectUrl;
+let pendingUploadFile;
 let isPlaying = false;
 let isBuffering = false;
 let rotationX = 0;
@@ -512,7 +523,7 @@ function updateTimeline() {
   durationLabel.textContent = formatTime(audio.duration);
 }
 
-function loadSong(file) {
+function loadSong(file, bpm) {
   if (!file) return;
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   objectUrl = URL.createObjectURL(file);
@@ -520,7 +531,8 @@ function loadSong(file) {
   trackName.textContent = file.name.replace(/\.[^.]+$/, "");
   playlistButtons.forEach((button) => button.classList.remove("is-active"));
   currentTrackIndex = null;
-  currentBpm = 128;
+  currentBpm = bpm;
+  audio.dataset.bpm = String(bpm);
   beatOffset = 0;
   isBuffering = true;
   audio.load();
@@ -534,6 +546,7 @@ function loadBuiltInTrack(index) {
   audio.src = track.src;
   trackName.textContent = track.title;
   currentBpm = track.bpm;
+  audio.dataset.bpm = String(track.bpm);
   currentTrackIndex = index;
   beatOffset = 0;
   isBuffering = true;
@@ -607,7 +620,32 @@ nextButton.addEventListener("click", () => {
     : (currentTrackIndex + 1) % builtInTracks.length;
   loadBuiltInTrack(index);
 });
-filePicker.addEventListener("change", (event) => loadSong(event.target.files[0]));
+filePicker.addEventListener("change", (event) => {
+  pendingUploadFile = event.target.files[0];
+  uploadError.textContent = "";
+  if (!pendingUploadFile) {
+    uploadConfig.hidden = true;
+    return;
+  }
+  uploadFileName.textContent = pendingUploadFile.name.replace(/\.[^.]+$/, "");
+  customBpmInput.value = "";
+  uploadConfig.hidden = false;
+  customBpmInput.focus();
+});
+customUploadForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const bpm = Number(customBpmInput.value);
+  if (!pendingUploadFile || !Number.isFinite(bpm) || bpm < 40 || bpm > 240) {
+    uploadError.textContent = "ingresa un BPM entre 40 y 240";
+    customBpmInput.focus();
+    return;
+  }
+  loadSong(pendingUploadFile, bpm);
+  pendingUploadFile = undefined;
+  uploadConfig.hidden = true;
+  uploadError.textContent = "";
+  customUploadForm.reset();
+});
 playlistButtons.forEach((button) => {
   button.addEventListener("click", () => loadBuiltInTrack(Number(button.dataset.track)));
 });
