@@ -10,7 +10,6 @@ const timeline = document.querySelector("#timeline");
 const currentTimeLabel = document.querySelector("#current-time");
 const durationLabel = document.querySelector("#duration");
 const trackName = document.querySelector("#track-name");
-const saveButton = document.querySelector("#save-heart");
 const playlistButtons = [...document.querySelectorAll("[data-track]")];
 const viewButtons = [...document.querySelectorAll("[data-view]")];
 
@@ -48,9 +47,10 @@ const builtInTracks = [
   },
 ];
 const particles = [];
-const numberParticles = [];
 const starParticles = [];
 const cometParticles = [];
+const saturnBodyParticles = [];
+const saturnRingParticles = [];
 const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 let audioContext;
 let analyser;
@@ -59,6 +59,7 @@ let demoTimer;
 let demoBeat = 0;
 let objectUrl;
 let isPlaying = false;
+let isBuffering = false;
 let rotationX = 0;
 let rotationY = 0;
 let rotationZ = -0.1;
@@ -67,6 +68,7 @@ let dragStartY = 0;
 let rotationAtDragStart = { x: 0, y: 0, z: 0 };
 let movedDuringGesture = false;
 let previousFrame = performance.now();
+let lastRenderedFrame = 0;
 let bassAverage = 0.08;
 let beatPulse = 0;
 let lastBeatAt = 0;
@@ -105,34 +107,11 @@ function buildHeart() {
   }
 }
 
-function buildNineteen() {
-  numberParticles.length = 0;
+function buildSpaceScene() {
   starParticles.length = 0;
   cometParticles.length = 0;
-  const glyphs = [
-    ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
-    ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
-  ];
-  const starts = [-10.5, 2.2];
-
-  glyphs.forEach((glyph, glyphIndex) => {
-    glyph.forEach((row, rowIndex) => {
-      [...row].forEach((cell, columnIndex) => {
-        if (cell !== "1") return;
-        for (let sample = 0; sample < 3; sample += 1) {
-          const sampleOffset = sample - 1;
-          numberParticles.push({
-            x: starts[glyphIndex] + columnIndex * 2.15 + sampleOffset * 0.34,
-            y: (rowIndex - 3) * 2.8 + sampleOffset * 0.28,
-            z: sampleOffset * 0.65,
-            seed: Math.random() * TAU,
-            char: "Fernanda",
-          });
-        }
-      });
-    });
-  });
-
+  saturnBodyParticles.length = 0;
+  saturnRingParticles.length = 0;
   const starCount = 68;
   const goldenAngle = Math.PI * (3 - Math.sqrt(5));
   for (let index = 0; index < starCount; index += 1) {
@@ -159,6 +138,39 @@ function buildNineteen() {
       depth: 8 + Math.random() * 9,
     });
   }
+
+  const latitudeBands = 20;
+  for (let latitudeIndex = 0; latitudeIndex <= latitudeBands; latitudeIndex += 1) {
+    const latitude = -Math.PI / 2 + (latitudeIndex / latitudeBands) * Math.PI;
+    const ringSize = Math.cos(latitude);
+    const longitudeCount = Math.max(12, Math.round(44 * ringSize));
+    for (let longitudeIndex = 0; longitudeIndex < longitudeCount; longitudeIndex += 1) {
+      const longitude = (longitudeIndex / longitudeCount) * TAU + latitudeIndex * 0.11;
+      saturnBodyParticles.push({
+        x: Math.cos(longitude) * ringSize * 10.5,
+        y: Math.sin(latitude) * 8.6,
+        z: Math.sin(longitude) * ringSize * 7.4,
+        seed: Math.random() * TAU,
+      });
+    }
+  }
+
+  const ringRadii = [13.5, 16, 18.5];
+  for (let ring = 0; ring < ringRadii.length; ring += 1) {
+    const radius = ringRadii[ring];
+    const segments = 96;
+    for (let index = 0; index < segments; index += 1) {
+      const angle = (index / segments) * TAU + ring * 0.035;
+      saturnRingParticles.push({
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius * (0.17 + ring * 0.012),
+        z: Math.sin(angle) * radius * 0.46,
+        angle,
+        ring,
+        seed: Math.random() * TAU,
+      });
+    }
+  }
 }
 
 function rotateLocal(x, y, z, angleX, angleY, angleZ) {
@@ -175,7 +187,7 @@ function rotateLocal(x, y, z, angleX, angleY, angleZ) {
 
 function resizeCanvas() {
   const bounds = canvas.getBoundingClientRect();
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
   canvas.width = Math.round(bounds.width * ratio);
   canvas.height = Math.round(bounds.height * ratio);
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -224,72 +236,83 @@ function projectPoint(x, y, z, centerX, centerY) {
   };
 }
 
-function drawSaturn(now, scale, centerX, centerY) {
-  const center = projectPoint(0, 0, 0, centerX, centerY);
-  const axis = projectPoint(7 * scale, 0, 0, centerX, centerY);
-  const angle = Math.atan2(axis.y - center.y, axis.x - center.x) - 0.08;
-  const tilt = Math.max(0.58, Math.abs(Math.cos(rotationX) * Math.cos(rotationY)));
-  const planetRadiusX = 10.4 * scale * center.perspective;
-  const planetRadiusY = 7.6 * scale * center.perspective * tilt;
-  const ringRadiusX = 17.2 * scale * center.perspective;
-  const ringRadiusY = 4.8 * scale * center.perspective * (0.72 + tilt * 0.28);
-  const hue = 326 + Math.sin(now * 0.00018) * 15;
-
-  ctx.save();
-  ctx.translate(center.x, center.y);
-  ctx.rotate(angle);
-
-  const ringGradient = ctx.createLinearGradient(-ringRadiusX, 0, ringRadiusX, 0);
-  ringGradient.addColorStop(0, `hsla(${hue + 26}, 55%, 66%, 0.12)`);
-  ringGradient.addColorStop(0.28, `hsla(${hue - 8}, 72%, 76%, 0.78)`);
-  ringGradient.addColorStop(0.55, `hsla(${hue + 18}, 62%, 62%, 0.45)`);
-  ringGradient.addColorStop(1, `hsla(${hue - 14}, 75%, 77%, 0.16)`);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, ringRadiusX, ringRadiusY, 0, 0, TAU);
-  ctx.strokeStyle = ringGradient;
-  ctx.lineWidth = 5;
-  ctx.shadowColor = `hsla(${hue}, 80%, 72%, 0.6)`;
-  ctx.shadowBlur = 13;
-  ctx.stroke();
-
-  const planetGradient = ctx.createRadialGradient(
-    -planetRadiusX * 0.33,
-    -planetRadiusY * 0.38,
-    planetRadiusX * 0.08,
-    0,
-    0,
-    planetRadiusX,
-  );
-  planetGradient.addColorStop(0, `hsl(${hue - 10}, 82%, 82%)`);
-  planetGradient.addColorStop(0.34, `hsl(${hue + 4}, 66%, 62%)`);
-  planetGradient.addColorStop(0.72, `hsl(${hue + 24}, 49%, 40%)`);
-  planetGradient.addColorStop(1, `hsl(${hue + 38}, 42%, 18%)`);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, planetRadiusX, planetRadiusY, 0, 0, TAU);
-  ctx.fillStyle = planetGradient;
-  ctx.fill();
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(0, 0, planetRadiusX, planetRadiusY, 0, 0, TAU);
-  ctx.clip();
-  for (let band = -3; band <= 3; band += 1) {
-    const bandY = band * planetRadiusY * 0.22 + Math.sin(now * 0.0003 + band) * 2;
-    ctx.fillStyle = `hsla(${hue + band * 8}, 70%, ${58 + band * 3}%, ${band % 2 === 0 ? 0.18 : 0.1})`;
-    ctx.fillRect(-planetRadiusX, bandY, planetRadiusX * 2, planetRadiusY * 0.18);
+class HeartCharacterRenderer {
+  drawGlyph({ point, right, text, font, color, shadowColor = "rgba(255, 166, 195, 0.48)", shadowBlur = 7 }) {
+    ctx.save();
+    ctx.translate(point.x, point.y);
+    if (right) ctx.rotate(Math.atan2(right.y - point.y, right.x - point.x));
+    ctx.scale(point.perspective, point.perspective);
+    ctx.fillStyle = color;
+    ctx.shadowColor = shadowColor;
+    ctx.shadowBlur = shadowBlur;
+    ctx.font = font;
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
   }
-  ctx.restore();
-
-  ctx.beginPath();
-  ctx.ellipse(0, 0, ringRadiusX, ringRadiusY, 0, 0, Math.PI);
-  ctx.strokeStyle = ringGradient;
-  ctx.lineWidth = 5.5;
-  ctx.shadowBlur = 9;
-  ctx.stroke();
-  ctx.restore();
 }
 
+class SaturnCharacterRenderer extends HeartCharacterRenderer {
+  draw({ now, scale, centerX, centerY, reduced }) {
+    const autoX = reduced ? 0 : 0.07 + Math.sin(now * 0.00009) * 0.055;
+    const autoY = reduced ? 0 : now * 0.000025;
+    const autoZ = reduced ? 0 : Math.sin(now * 0.000065) * 0.035;
+
+    const projectParticle = (particle, localScale = scale) => {
+      const position = rotateLocal(particle.x, particle.y, particle.z, autoX, autoY, autoZ);
+      return {
+        particle,
+        point: projectPoint(position.x * localScale, position.y * localScale, position.z * localScale, centerX, centerY),
+      };
+    };
+
+    const rings = saturnRingParticles.map((particle) => projectParticle(particle));
+    const body = saturnBodyParticles.map((particle) => projectParticle(particle));
+    const backRings = rings.filter((item) => item.point.z < 0);
+    const frontRings = rings.filter((item) => item.point.z >= 0);
+    const ringFont = `700 ${Math.max(5.4, scale * 0.56)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+    const bodyFont = `700 ${Math.max(5.4, scale * 0.57)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+
+    const drawRings = (items) => {
+      ctx.save();
+      ctx.font = ringFont;
+      ctx.shadowColor = "rgba(255, 166, 195, 0.56)";
+      ctx.shadowBlur = 4;
+      for (const item of items) {
+        const ringAlpha = 0.7 + item.particle.ring * 0.1;
+        ctx.fillStyle = `rgba(255, 194, 212, ${ringAlpha})`;
+        ctx.fillText("19", item.point.x, item.point.y);
+      }
+      ctx.restore();
+    };
+
+    drawRings(backRings);
+    ctx.save();
+    ctx.font = bodyFont;
+    ctx.shadowColor = "rgba(255, 166, 195, 0.42)";
+    ctx.shadowBlur = 3;
+    body.forEach((item, index) => {
+      const depthLight = Math.max(0, Math.min(1, (item.point.z / (scale * 8) + 1) / 2));
+      const red = Math.round(222 + depthLight * 22);
+      const green = Math.round(116 + depthLight * 50);
+      const blue = Math.round(158 + depthLight * 34);
+      ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${0.58 + depthLight * 0.38})`;
+      ctx.fillText("19", item.point.x, item.point.y);
+    });
+    ctx.restore();
+    drawRings(frontRings);
+  }
+}
+
+const heartRenderer = new HeartCharacterRenderer();
+const saturnRenderer = new SaturnCharacterRenderer();
+
 function draw(now) {
+  const targetFps = isBuffering ? 20 : window.innerWidth <= 480 ? 30 : 45;
+  if (now - lastRenderedFrame < 1000 / targetFps) {
+    requestAnimationFrame(draw);
+    return;
+  }
+  lastRenderedFrame = now;
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
   ctx.clearRect(0, 0, width, height);
@@ -339,13 +362,14 @@ function draw(now) {
       );
       const alpha = 0.48 + (1 - depth) * 0.38 + energy * 0.12;
 
-      ctx.save();
-      ctx.translate(point.x, point.y);
-      ctx.rotate(Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x));
-      ctx.scale(point.perspective, point.perspective);
-      ctx.fillStyle = `rgba(244, 166, 192, ${Math.min(alpha, 1)})`;
-      ctx.fillText("i love you", 0, 0);
-      ctx.restore();
+      heartRenderer.drawGlyph({
+        point,
+        right: nextPoint,
+        text: "i love you",
+        font: `600 ${Math.max(8.5, scale * 0.78)}px ui-monospace, SFMono-Regular, Menlo, monospace`,
+        color: `rgba(244, 166, 192, ${Math.min(alpha, 1)})`,
+        shadowBlur: 7 + energy * 8 + activePulse * 10,
+      });
     }
 
     const centerPoint = projectPoint(0, 0, 4, centerX, centerY);
@@ -415,24 +439,7 @@ function draw(now) {
       ctx.restore();
     }
 
-    drawSaturn(now, baseScale, centerX, centerY);
-    const numberScale = baseScale * 0.72;
-    for (const particle of numberParticles) {
-      const wave = reduced ? 0 : Math.sin(now * 0.0018 + particle.seed) * 0.5;
-      const depth = particle.z + wave;
-      const point = projectPoint(particle.x * numberScale, particle.y * numberScale, depth * numberScale, centerX, centerY);
-      const right = projectPoint((particle.x + 0.6) * numberScale, particle.y * numberScale, depth * numberScale, centerX, centerY);
-      ctx.save();
-      ctx.translate(point.x, point.y);
-      ctx.rotate(Math.atan2(right.y - point.y, right.x - point.x));
-      ctx.scale(point.perspective, point.perspective);
-      ctx.fillStyle = "rgba(255, 226, 235, 0.98)";
-      ctx.shadowColor = "rgba(42, 7, 25, 0.9)";
-      ctx.shadowBlur = 4;
-      ctx.font = `700 ${Math.max(5.8, numberScale * 0.62)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
-      ctx.fillText(particle.char, 0, 0);
-      ctx.restore();
-    }
+    saturnRenderer.draw({ now, scale: baseScale, centerX, centerY, reduced });
   }
 
   ctx.restore();
@@ -515,6 +522,7 @@ function loadSong(file) {
   currentTrackIndex = null;
   currentBpm = 128;
   beatOffset = 0;
+  isBuffering = true;
   audio.load();
   togglePlayback();
 }
@@ -528,6 +536,7 @@ function loadBuiltInTrack(index) {
   currentBpm = track.bpm;
   currentTrackIndex = index;
   beatOffset = 0;
+  isBuffering = true;
   currentTimeLabel.textContent = "0:00";
   timeline.value = 0;
   timeline.style.setProperty("--progress", "0%");
@@ -536,20 +545,6 @@ function loadBuiltInTrack(index) {
   });
   audio.load();
   togglePlayback();
-}
-
-function saveHeart() {
-  const exportCanvas = document.createElement("canvas");
-  exportCanvas.width = canvas.width;
-  exportCanvas.height = canvas.height;
-  const exportContext = exportCanvas.getContext("2d");
-  exportContext.fillStyle = "#000";
-  exportContext.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-  exportContext.drawImage(canvas, 0, 0);
-  const link = document.createElement("a");
-  link.download = currentView === "heart" ? "heart-code.png" : "saturn-19.png";
-  link.href = exportCanvas.toDataURL("image/png");
-  link.click();
 }
 
 playButton.addEventListener("click", togglePlayback);
@@ -630,12 +625,27 @@ timeline.addEventListener("input", () => {
 audio.addEventListener("play", () => updatePlayingState(true));
 audio.addEventListener("pause", () => updatePlayingState(false));
 audio.addEventListener("ended", () => updatePlayingState(false));
+audio.addEventListener("loadstart", () => {
+  isBuffering = true;
+});
+audio.addEventListener("canplay", () => {
+  isBuffering = false;
+});
+audio.addEventListener("playing", () => {
+  isBuffering = false;
+});
+audio.addEventListener("waiting", () => {
+  isBuffering = true;
+});
+audio.addEventListener("error", () => {
+  isBuffering = false;
+  updatePlayingState(false);
+});
 audio.addEventListener("loadedmetadata", updateTimeline);
 audio.addEventListener("timeupdate", updateTimeline);
-saveButton.addEventListener("click", saveHeart);
 window.addEventListener("resize", resizeCanvas);
 
 buildHeart();
-buildNineteen();
+buildSpaceScene();
 resizeCanvas();
 requestAnimationFrame(draw);

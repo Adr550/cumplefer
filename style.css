@@ -40,74 +40,16 @@ label {
   width: min(100%, 560px);
   min-height: 100svh;
   display: grid;
-  grid-template-rows: 76px 430px auto;
-  padding: 0 22px 30px;
+  grid-template-rows: minmax(380px, 56svh) auto;
+  padding: max(12px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom));
   background: #000;
   overflow: hidden;
 }
 
-.topbar {
-  display: grid;
-  grid-template-columns: 38px 1fr 48px;
-  align-items: center;
-  gap: 4px;
-  color: var(--gray);
-}
-
-.topbar h1 {
-  margin: 0;
-  font-family: ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
-  font-size: clamp(1.36rem, 5vw, 1.75rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
-
-.icon-button {
-  border: 0;
-  padding: 0;
-  background: none;
-  color: currentColor;
-  cursor: pointer;
-}
-
-.back {
-  width: 30px;
-  height: 32px;
-  display: grid;
-  place-items: center start;
-}
-
-.back span {
-  display: block;
-  width: 20px;
-  height: 3px;
-  border-radius: 999px;
-  background: var(--gray);
-}
-
-.camera {
-  justify-self: end;
-  width: 46px;
-  height: 46px;
-}
-
-.camera svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: var(--gray);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 3.4;
-}
-
-.camera .camera-shadow {
-  opacity: 0.8;
-}
-
 .heart-stage {
   position: relative;
-  height: 430px;
+  min-height: 380px;
+  height: 100%;
   display: grid;
   place-items: center;
   isolation: isolate;
@@ -380,14 +322,53 @@ label {
   }
 }
 
+@media (max-width: 480px) {
+  .app {
+    grid-template-rows: minmax(330px, 52svh) auto;
+    padding-inline: 14px;
+  }
+
+  .heart-stage {
+    min-height: 330px;
+  }
+
+  .player {
+    padding-inline: 4px;
+  }
+
+  .playlist {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding: 0 4px 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .playlist::-webkit-scrollbar {
+    display: none;
+  }
+
+  .playlist button {
+    flex: 0 0 auto;
+    min-height: 30px;
+  }
+
+  .control-button.secondary {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 @media (max-height: 690px) {
   .app {
-    grid-template-rows: 65px 370px auto;
+    grid-template-rows: minmax(300px, 49svh) auto;
     padding-bottom: 16px;
   }
 
   .heart-stage {
-    height: 370px;
+    min-height: 300px;
   }
 
 }
