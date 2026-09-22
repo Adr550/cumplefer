@@ -624,7 +624,12 @@ timeline.addEventListener("input", () => {
 });
 audio.addEventListener("play", () => updatePlayingState(true));
 audio.addEventListener("pause", () => updatePlayingState(false));
-audio.addEventListener("ended", () => updatePlayingState(false));
+audio.addEventListener("ended", () => {
+  const nextIndex = currentTrackIndex === null
+    ? 0
+    : (currentTrackIndex + 1) % builtInTracks.length;
+  loadBuiltInTrack(nextIndex);
+});
 audio.addEventListener("loadstart", () => {
   isBuffering = true;
 });
